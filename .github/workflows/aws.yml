@@ -44,12 +44,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: Get new image tag
+    - name: Get tag name
+      uses: olegtarasov/get-tag@v2
+    
+    - name: Get new container image tag
       id: image-tag
-      env:
-        IMAGE_TAG: ${{ github.ref }}
       run: |
-        echo "::set-output name=image::ghcr.io/mvkaran/2048:$IMAGE_TAG"
+        echo "::set-output name=image::ghcr.io/mvkaran/2048:$GIT_TAG_NAME"
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
