@@ -1,0 +1,68 @@
+name: Deploy to Amazon ECS
+
+# Triggers on new tag pushes
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  # Builds a new container image based on the tag release
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+   
+    steps:
+      - name: Checkout files    
+        uses: actions/checkout@v2
+      
+      # Pushes the image to GitHub Container Registry
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v1
+        with:
+          username: mvkaran
+          password: ${{ secrets.PAT }}
+          repository: ghcr.io/mvkaran/2048
+          tag_with_ref: true
+          tag_with_sha: true
+  
+  # Deploys the new container image to ECS   
+  deploy:
+    name: Deploy
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Setup AWS creds
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Get new image tag
+      id: image-tag
+      env:
+        IMAGE_TAG: ${{ github.ref }}
+      run: |
+        echo "::set-output name=image::ghcr.io/mvkaran/2048:$IMAGE_TAG"
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: 2048-game
+        image: ${{ steps.image-tag.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: 2048-game-service
+        cluster: default
+        wait-for-service-stability: true
