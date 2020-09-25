@@ -66,4 +66,3 @@ jobs:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: 2048-game-service
         cluster: default
-        wait-for-service-stability: true
