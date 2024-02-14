@@ -3,8 +3,8 @@ name: Deploy to Kubernetes Cluster
 # Triggers on new tag pushes
 on:
   push:
-    tags:
-      - v*
+    
+      
 
 jobs:
   # Builds a new container image based on the tag release
@@ -14,46 +14,11 @@ jobs:
    
     steps:
       - name: Checkout files    
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       # Pushes the image to GitHub Container Registry
       - uses: mr-smithers-excellent/docker-build-push@v4
-        name: Build & push Docker image
+        name: Docker image
         with:
-          image: mvkaran/2048
-          registry: ghcr.io
           dockerfile: Dockerfile
-          username: ${{ github.actor }}
-          password: ${{ secrets.PAT }}
-  deploy:
-    name: Deploy
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Set context from Kubeconfig
-      uses: azure/k8s-set-context@v1
-      with:
-        method: kubeconfig
-        kubeconfig: ${{ secrets.KUBECONFIG }} 
-        context: github-demo 
-      id: setcontext
-
-    - name: Get tag name
-      uses: olegtarasov/get-tag@v2
-    
-    - name: Get new container image tag
-      id: image-tag
-      run: |
-        echo "::set-output name=image::ghcr.io/mvkaran/2048:$GIT_TAG_NAME"
-        
-    - name: Deploy to Kubernetes
-      uses: Azure/k8s-deploy@v1
-      with:
-        manifests: |
-          2048.yaml
-        images: |
-          ${{ steps.image-tag.outputs.image }}
+  
